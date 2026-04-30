@@ -80,7 +80,17 @@
 }
 .modal-member .list_member {
 	border: 1px solid #dedede;
-	height: 94%;
+	height: 80%;
+}
+
+.modal-member .list_member .list {
+	/* border: 1px solid #dedede; */
+	height: 86%;
+}
+
+.modal-member .list_member .pagination {
+	/* border: 1px solid #dedede; */
+	height: 4%;
 }
 
 .modal-saldo-member div.head {
@@ -204,3 +214,40 @@ span.select2-selection {
 	border-color: rgb(185, 74, 72) !important;
 }
 /* END - SELECT2 */
+
+/* PAGINATION */
+.pagination {
+    display: inline-block;
+    list-style: none;
+    padding: 0;
+}
+.pagination li {
+    display: inline;
+    margin: 0 4px;
+}
+.pagination li.hide {
+    display: none;
+}
+.pagination a {
+    color: black;
+    float: left;
+    padding: 8px 16px;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    /* border-radius: 5px; */
+    transition: background-color .3s;
+}
+.pagination a.active {
+    background-color: #4CAF50;
+    color: white;
+    border: 1px solid #4CAF50;
+}
+.pagination a:hover:not(.active) {
+    background-color: #ddd;
+}
+
+a.disabled {
+	pointer-events: none;
+  	cursor: default;
+}
+/* END - PAGINATION */

@@ -18,21 +18,163 @@ class Member extends Public_Controller
 
     public function modalMember()
     {
-        $m_member = new \Model\Storage\Member_model();
-        $now = $m_member->getDate();
+        $data = null;
 
-        $d_member = $m_member->where('status', 1)->orderBy('kode_member', 'desc')->with(['member_group'])->get();
+        $content['akses'] = $this->hasAkses;
+        $content['data'] = $data;
+
+        $html = $this->load->view($this->pathView . 'modal_member', $content, TRUE);
+
+        echo $html;
+    }
+
+    public function pagination()
+    {
+        $params = $this->input->get('params');
+
+        $sql_condition = null;
+
+        $grup = $params['grup'];
+        if ( !empty($grup) && $grup != '' ) {
+            if ( empty($sql_condition) ) {
+                $sql_condition = "where mbr.mg_nama like '%".$grup."%'";
+            } else {
+                $sql_condition .= " and mbr.mg_nama like '%".$grup."%'";
+            }
+        }
+
+        $nama = $params['nama'];
+        if ( !empty($nama) && $nama != '' ) {
+            if ( empty($sql_condition) ) {
+                $sql_condition = "where mbr.nama like '%".$nama."%'";
+            } else {
+                $sql_condition .= " and mbr.nama like '%".$nama."%'";
+            }
+        }
+
+        $no_telp = $params['no_telp'];
+        if ( !empty($no_telp) && $no_telp != '' ) {
+            if ( empty($sql_condition) ) {
+                $sql_condition = "where mbr.no_telp like '%".$no_telp."%'";
+            } else {
+                $sql_condition .= " and mbr.no_telp like '%".$no_telp."%'";
+            }
+        }
+
+        /* HITUNG PAGE */
+        $m_member = new \Model\Storage\Conf();
+        $sql = "
+            select * from (
+                select 
+                    m.*,
+                    mg.nama as mg_nama
+                from member m
+                left join
+                    member_group mg 
+                    on
+                        m.member_group_id = mg.id
+            ) mbr
+            ".$sql_condition."
+        ";
+        $d_member = $m_member->hydrateRaw( $sql );
+
+        $jml_data = 0;
+        $jml_page = 0;
+        if ( $d_member->count() > 0 ) {
+            $jml_data = $d_member->count();
+            $jml_page = ceil($jml_data/10);
+        }
+        /* END - HITUNG PAGE */
+
+        $content['jml_data'] = $jml_data;
+        $content['jml_page'] = $jml_page;
+        $html = $this->load->view($this->pathView . 'pagination', $content, TRUE);
+
+        echo $html;
+    }
+
+    public function getListsMember()
+    {
+        $params = $this->input->get('params');
+
+        $sql_condition = null;
+
+        $grup = $params['grup'];
+        if ( !empty($grup) && $grup != '' ) {
+            if ( empty($sql_condition) ) {
+                $sql_condition = "where mbr.mg_nama like '%".$grup."%'";
+            } else {
+                $sql_condition .= " and mbr.mg_nama like '%".$grup."%'";
+            }
+        }
+
+        $nama = $params['nama'];
+        if ( !empty($nama) && $nama != '' ) {
+            if ( empty($sql_condition) ) {
+                $sql_condition = "where mbr.nama like '%".$nama."%'";
+            } else {
+                $sql_condition .= " and mbr.nama like '%".$nama."%'";
+            }
+        }
+
+        $no_telp = $params['no_telp'];
+        if ( !empty($no_telp) && $no_telp != '' ) {
+            if ( empty($sql_condition) ) {
+                $sql_condition = "where mbr.no_telp like '%".$no_telp."%'";
+            } else {
+                $sql_condition .= " and mbr.no_telp like '%".$no_telp."%'";
+            }
+        }
+
+        $row_num_start = (!empty($params['page_num']) && isset($params['page_num'])) ? (($params['page_num']*10)-9) : ((1*10)-9);
+        $row_num_end = $row_num_start+9; 
+
+        /* GET DATA */
+        $m_member = new \Model\Storage\Conf();
+        $sql = "
+            select * from
+            (
+                select
+                    mbr.*,
+    	            ROW_NUMBER() OVER (ORDER BY mbr.kode_member) AS row_num
+                from (
+                    select 
+                        m.*,
+                        mg.nama as mg_nama,
+                        case
+                            when GETDATE() > m.tgl_berakhir or m.mstatus = 0 then
+                                'merah'
+                            else
+                                null
+                        end as bg_color,
+                        case
+                            when GETDATE() > m.tgl_berakhir or m.mstatus = 0 then
+                                'NON AKTIF'
+                            else
+                                'AKTIF'
+                        end as status_aktif
+                    from member m
+                    left join
+                        member_group mg 
+                        on
+                            m.member_group_id = mg.id
+                ) mbr
+                ".$sql_condition."
+            ) data
+            where
+                data.row_num >= ".$row_num_start." and data.row_num <= ".$row_num_end."
+        ";
+        // cetak_r( $sql, 1 );
+        $d_member = $m_member->hydrateRaw( $sql );
 
         $data = null;
         if ( $d_member->count() > 0 ) {
             $data = $d_member->toArray();
         }
+        /* END - GET DATA */
 
-        $content['akses'] = $this->hasAkses;
-        $content['tanggal'] = $now['tanggal'];
         $content['data'] = $data;
-
-        $html = $this->load->view($this->pathView . 'modal_member', $content, TRUE);
+        $html = $this->load->view($this->pathView . 'list_member', $content, TRUE);
 
         echo $html;
     }
@@ -372,5 +514,17 @@ class Member extends Public_Controller
         }
 
         display_json( $this->result );
+    }
+
+    public function tes() {
+        $m_member = new \Model\Storage\Member_model();
+        $d_member = $m_member->where('status', 1)->orderBy('kode_member', 'desc')->with(['member_group'])->get();
+
+        $data = null;
+        if ( $d_member->count() > 0 ) {
+            $data = $d_member->toArray();
+        }
+        
+        cetak_r( $data );
     }
 }
